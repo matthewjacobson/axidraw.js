@@ -7,6 +7,7 @@
   </head>
   
   <body>
+    
     <button id="butConnect">Connect</button>
     <br><br>
     <label for="title">Send: </label>
@@ -19,9 +20,34 @@
     <br>
     <textarea id="textOutput" rows="20" cols="80"></textarea>
     <br>
-    <button id="butReceive">Receive</button>
-    <br><br>
     <a href="http://evil-mad.github.io/EggBot/ebb.html">AxiDraw Commands Here</a>
+    
+    <script>
+      
+      const butConnect = document.getElementById('butConnect');
+      const butSend = document.getElementById('butSend');
+      const textInput = document.getElementById('textInput');
+      const textOutput = document.getElementById('textOutput');
+      
+      let axidraw = new Axidraw();
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        if ('serial' in navigator) {
+          butConnect.addEventListener('click', axidraw.connect());
+          butSend.addEventListener('click', clickSend);
+        } else {
+          console.log('Browser not supported - please try again in chrome');
+          butConnect.innerText = 'Browser not supported';
+          butConnect.disabled = true;
+        }
+      });
+      
+      function clickSend() {
+        textOutput.value = axidraw.write(textInput.value);
+        textInput.value = '';
+      }
+      
+    </script>
   </body>
   
 </html>
