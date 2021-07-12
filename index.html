@@ -7,44 +7,84 @@
   </head>
   
   <body>
-    
+
     <button id="butConnect">Connect</button>
-    <br><br>
-    <label for="title">Send: </label>
     <br>
-    <textarea id="textInput" rows="20" cols="80">TP</textarea>
+    <button id="butDraw" disabled>Draw</button>
     <br>
-    <button id="butSend">Send</button>
-    <br><br>
-    <label for="title">Receive: </label>
-    <br>
-    <textarea id="textOutput" rows="20" cols="80"></textarea>
-    <br>
-    <a href="http://evil-mad.github.io/EggBot/ebb.html">AxiDraw Commands Here</a>
     
     <script>
       
-      const butConnect = document.getElementById('butConnect');
-      const butSend = document.getElementById('butSend');
-      const textInput = document.getElementById('textInput');
-      const textOutput = document.getElementById('textOutput');
-      
       let axidraw = new AxiDraw();
+      
+      const butConnect = document.getElementById('butConnect');
+      const butDraw = document.getElementById('butDraw');
       
       document.addEventListener('DOMContentLoaded', () => {
         if ('serial' in navigator) {
-          butConnect.addEventListener('click', axidraw.connect());
-          butSend.addEventListener('click', clickSend);
+          butConnect.addEventListener('click', clickConnect);
+          butDraw.addEventListener('click', clickDraw);
         } else {
           console.log('Browser not supported - please try again in chrome');
           butConnect.innerText = 'Browser not supported';
           butConnect.disabled = true;
         }
       });
-      
-      function clickSend() {
-        textOutput.value = axidraw.write(textInput.value);
-        textInput.value = '';
+
+      async function clickConnect() {
+        if (axidraw.port) {
+          await axidraw.disconnect();
+          butConnect.innerText = 'Disconnected';
+          butConnect.disabled = true;
+          butDraw.disabled = true;
+          return;
+        }
+        await axidraw.connect();
+        butConnect.innerText = 'Disconnect';
+        butDraw.disabled = false;
+      }
+
+      function circle(cx, cy, r, n) {
+        let points = [];
+        for (let i = 0; i < n + 1; i++) {
+          let a  = 2 * Math.PI * i / n;
+          let x = cx + Math.cos(a) * r;
+          let y = cy + Math.sin(a) * r;
+          points.push([x / 100, y / 100]);
+        }
+        return points;
+      }
+
+      async function clickDraw() {
+        let w = 600;
+        let h = 400;
+        let p = 50;
+        let r = 50;
+        let paths = [];
+        for (let x = p + r; x < w - p - r; x += r) {
+          for (let y = p + r; y < h - p - r; y += r) {
+            paths.push(circle(x, y, r, 20));
+          }
+        }
+
+        axidraw.draw(paths);
+
+        let ns = 'http://www.w3.org/2000/svg';
+        let svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('width', '6in');
+        svg.setAttribute('height', '4in');
+        svg.setAttribute('viewBox', '0 0 ' + 600 + ' ' + 400);
+        for (let i = 0; i < paths.length; i++) {
+
+          let shape = 'M ' + 100 * paths[i][0][0] + ' ' + 100 * paths[i][0][1];
+          for (let j = 1; j < paths[i].length; j++) shape += ' L ' + 100 * paths[i][j][0] + ' ' + 100 * paths[i][j][1];
+
+          let path = document.createElementNS(ns, 'path');
+          path.setAttribute('d', shape);
+          path.setAttribute('style', 'fill:none;stroke-width:1;stroke:rgb(0%,0%,0%);');
+          svg.appendChild(path);
+        }
+        document.body.appendChild(svg);
       }
       
     </script>
